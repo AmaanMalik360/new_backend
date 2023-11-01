@@ -9,8 +9,10 @@ app.use(express.json());
 app.use(cors());
 
 
+
 // To get environment variable
 dotenv.config({path: './config.env'})
+
 
 const PORT = process.env.Port
 const DB_URL = process.env.Database2
@@ -30,7 +32,7 @@ mongoose.connect(DB_URL ,
 const authRoutes = require('./routes/auth')
 const companyRoutes = require('./routes/Company/auth')
 const eventRoutes = require('./routes/event')
-const paymentRoutes = require('./routes/payment')
+const paymentRoutes = require('./routes/payment');
 
 
 app.use(authRoutes)

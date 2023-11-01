@@ -192,39 +192,3 @@ exports.acceptBid = async (req, res) => {
     }
 };
 
-exports.checkedOutBid = async (req, res) => {
-    
-    const eventId = req.params.eventId;
-    const companyId = req.params.companyId;
-
-    try 
-    {
-        // Find the event by ID
-        let event = await Event.findById(eventId);
-
-        if (!event) {
-        return res.status(404).json({ message: "Event not found" });
-        }
-
-        // Find the response within the event's responses array
-        const response = event.responses.find((r) => r.company.toString() === companyId);
-
-        if (!response) {
-        return res.status(404).json({ message: "Response not found for this company" });
-        }
-
-        // Update the response's checkedout status
-        response.checkedout = true;
-        console.log("From Checkedout Bid API after checking response as true.", response);
-
-        // Save the event with the updated response
-        event = await event.save();
-
-        res.status(200).json({ message: "Response marked as checked out successfully" });
-    } 
-    catch (error) 
-    {
-        console.error("Error marking response as checked out", error);
-        res.status(409).json({ message: "Error! Try again later", error });
-    }
-};

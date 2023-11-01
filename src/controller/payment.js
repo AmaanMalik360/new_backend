@@ -1,7 +1,14 @@
 const Event = require('../modals/Event')
 const User = require('../modals/user')
 const Company = require('../modals/Company')
-const stripe = require("stripe")("sk_test_51O2J2bSEe0mVyEmns4JkwOolirpMRD0PEXkTxXE2520wCYBzX0msbDhZCLxjYtl27bSM7Tk2JjjLxf0qyBv2cYl300JIUkfAkd")
+const stripe = require("stripe")(`${process.env.SK_TEST}`)
+// const stripe = require("stripe")("sk_test_51O2J2bSEe0mVyEmns4JkwOolirpMRD0PEXkTxXE2520wCYBzX0msbDhZCLxjYtl27bSM7Tk2JjjLxf0qyBv2cYl300JIUkfAkd")
+
+// const { oauth2 } = require('googleapis/build/src/apis/oauth2');
+const {google} = require('googleapis')
+const nodemailer = require('nodemailer');
+const Oauth2 = google.auth.OAuth2;
+
 
 exports.createCheckout = async (req,res) => {
     const {event, price, email} = req.body; 
@@ -16,7 +23,7 @@ exports.createCheckout = async (req,res) => {
         [  
             {
                 price_data:{
-                    currency: "inr",
+                    currency: "pkr",
                     product_data: { // Use product_data instead of event_data
                         name: event.type, // Name of the product/event
                     },
@@ -31,7 +38,7 @@ exports.createCheckout = async (req,res) => {
             line_items: lineItems,
             mode: "payment",
             success_url: `http://localhost:3000/payment-success/${event._id}/${company._id}`,
-            cancel_url: `http://localhost:3000/payment-cancel`,
+            cancel_url: `http://localhost:3000/single-response`,
         })
         
         res.status(200).json({id:session.id})
@@ -44,41 +51,100 @@ exports.createCheckout = async (req,res) => {
 
 }
 
-// ----------------------------------------------- Webhooks Setup with Stripe -------------------------
 
+const createTransporter = async () => {
+  const oauth2Client = new Oauth2(
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET,
+    "https://developers.google.com/oauthplayground"
+  );
 
-// The library needs to be configured with your account's secret key.
-// Ensure the key is kept out of any version control system you might be using.
+  oauth2Client.setCredentials({
+      refresh_token: process.env.REFRESH_TOKEN
+  });
 
+  const accessToken = await new Promise((resolve, reject) => {
+    oauth2Client.getAccessToken((err, token) => {
+      if(err)
+      {
+        reject("Failed to fetch the access token!!");
+      }
+      resolve(token);
+    })
+  })
 
-// This is your Stripe CLI webhook secret for testing your endpoint locally.
-const endpointSecret = "whsec_fcbb33a654eb7ef2b48dd48b4dd640cd56adabdbe1d593826836b2a6f2cfae66";
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth:{
+      type: "OAuth2",
+      user:process.env.MY_EMAIL,
+      accessToken,
+      clientId: process.env.CLIENT_ID,
+      clientSecret: process.env.CLIENT_SECRET,
+      refreshToken: process.env.REFRESH_TOKEN
+    }
+  });
 
-exports.paymentNotification = async (req, res) => {
-    
-  const sig = req.headers['stripe-signature'];
-
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    res.status(400).send(`Webhook Error: ${err.message}`);
-    return;
-  }
-
-  // Handle the event
-  switch (event.type) {
-    case 'payment_intent.succeeded':
-      const paymentIntentSucceeded = event.data.object;
-      // Then define and call a function to handle the event payment_intent.succeeded
-      break;
-    // ... handle other event types
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-
-  // Return a 200 res to acknowledge receipt of the event
-  res.send();
 }
 
+const sendEmail = async (emailOptions) =>{
+  try 
+  {
+    const transporter = await createTransporter();
+    await transporter.sendMail(emailOptions);
+    
+  } 
+  catch (error) 
+  {
+    console.log(error);
+  }
+}
+
+exports.checkedOutBid = async (req, res) => {
+    
+  const eventId = req.params.eventId;
+  const companyId = req.params.companyId;
+
+  try 
+  {
+      // Find the event by ID
+      let event = await Event.findById(eventId);
+      let company = await Company.findById(companyId);
+
+      if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+      }
+
+      // Find the response within the event's responses array
+      const response = event.responses.find((r) => r.company.toString() === companyId);
+
+      if (!response) {
+      return res.status(404).json({ message: "Response not found for this company" });
+      }
+
+      // Update the response's checkedout status
+      response.checkedout = true;
+      console.log("From Checkedout Bid API after checking response as true.", response);
+
+      // Now sending confirmation mail to company
+      
+      const options = {
+        from: process.env.MY_EMAIL,
+        to: company.email,
+        subject: "Payment Successfully Done. ",
+        text: "Hey there! this mail is to confirm about the that you have been successfully transacted amount on the card registered with us."
+      }
+      sendEmail(options);     
+       
+
+      // Save the event with the updated response
+      event = await event.save();
+
+      res.status(200).json({ message: "Response marked as checked out successfully." });
+  } 
+  catch (error) 
+  {
+      console.error("Error marking response as checked out", error);
+      res.status(409).json({ message: "Error! Try again later", error });
+  }
+};

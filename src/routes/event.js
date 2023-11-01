@@ -18,7 +18,6 @@ router.patch('/event-decor/:id',
 router.get('/get-responses/:id', getResponses);
 router.post('/register-response/:id', registerResponses);
 router.patch('/accept-bid/:id', acceptBid);
-router.patch('/checkedout/:eventId/:companyId', checkedOutBid);
 router.get('/events', getEvents);
 router.get('/event/:id', getEvent);
 

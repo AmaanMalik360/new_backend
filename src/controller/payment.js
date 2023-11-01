@@ -2,9 +2,8 @@ const Event = require('../modals/Event')
 const User = require('../modals/user')
 const Company = require('../modals/Company')
 const stripe = require("stripe")(`${process.env.SK_TEST}`)
-// const stripe = require("stripe")("sk_test_51O2J2bSEe0mVyEmns4JkwOolirpMRD0PEXkTxXE2520wCYBzX0msbDhZCLxjYtl27bSM7Tk2JjjLxf0qyBv2cYl300JIUkfAkd")
 
-// const { oauth2 } = require('googleapis/build/src/apis/oauth2');
+
 const {google} = require('googleapis')
 const nodemailer = require('nodemailer');
 const Oauth2 = google.auth.OAuth2;
@@ -38,7 +37,7 @@ exports.createCheckout = async (req,res) => {
             line_items: lineItems,
             mode: "payment",
             success_url: `http://localhost:3000/payment-success/${event._id}/${company._id}`,
-            cancel_url: `http://localhost:3000/single-response`,
+            cancel_url: `http://localhost:3000/view-responses`,
         })
         
         res.status(200).json({id:session.id})

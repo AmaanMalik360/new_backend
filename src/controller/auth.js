@@ -47,7 +47,7 @@ exports.signin = async (req,res) => {
             console.log(con)
             if(con)
             {
-                const token = await jwt.sign({_id: user._id}, process.env.JWT_SECRET, {expiresIn: '1h'})
+                const token = await jwt.sign({_id: user._id}, process.env.JWT_SECRET, {expiresIn: '3h'})
 
                 const {_id, name, email, fullname} = user;
                 

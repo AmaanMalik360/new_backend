@@ -192,3 +192,45 @@ exports.acceptBid = async (req, res) => {
     }
 };
 
+exports.updateBid = async (req,res) =>{
+    const eventId = req.params.id; // The event ID where the bid is accepted
+    const companyId = req.body.cId; // The ID of the company whose bid is accepted
+    const newprice = req.body.updatedPrice
+    try 
+    {
+        // Find the event by ID
+        const event = await Event.findById(eventId);
+        console.log("From Update Bid: ", event);
+        
+        if (!event) {
+            return res.status(404).json({ message: "Event not found" });
+        }
+
+       // Find the response within the event's responses array
+        const response = event.responses.find(
+            (r) => r.company.toString() === companyId
+        );
+
+        if (!response) {
+            return res
+            .status(404)
+            .json({ message: "Response not found for this company" });
+        }
+
+        console.log("response found");
+
+        response.price = newprice;
+
+        // Save the event with the updated response
+        await event.save();
+    
+        res.status(200).json({ message: "Bid accepted successfully" });
+    
+    } 
+    catch (error) 
+    {
+        console.log(error);
+        res.status(409).json({ message: "Error! Try again later", error });
+        
+    }
+}

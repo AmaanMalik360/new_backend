@@ -2,7 +2,7 @@ const express = require('express');
 const {isRequestValidated } = require('../validators/auth')
 
 const { validateAddEventRequest } = require('../validators/event');
-const { addevent, addfood, addDecor, getResponses, getEvents, registerResponses, acceptBid, checkedOutBid, getEvent } = require('../controller/event');
+const { addevent, addfood, addDecor, getResponses, getEvents, registerResponses, acceptBid, checkedOutBid, getEvent, updateBid } = require('../controller/event');
 const { validateAddFoodRequest } = require('../validators/addfood');
 const router = express.Router()
 
@@ -18,6 +18,7 @@ router.patch('/event-decor/:id',
 router.get('/get-responses/:id', getResponses);
 router.post('/register-response/:id', registerResponses);
 router.patch('/accept-bid/:id', acceptBid);
+router.patch('/update-bid/:id', updateBid);
 router.get('/events', getEvents);
 router.get('/event/:id', getEvent);
 

@@ -73,3 +73,17 @@ exports.adminSignin = async (req,res) => {
     }
    
 }
+
+
+exports.getCompany = async (req,res) =>{
+    
+    try {
+        const company  = await Company.findById(req.params.id)
+        res.status(200).json({"sucess":true,company})
+    } 
+    catch (error)
+    {
+        console.log(error);
+        res.status(409).json({message: "Error! Try again later", error});
+    }
+}

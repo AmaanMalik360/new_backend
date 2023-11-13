@@ -28,7 +28,14 @@ const companySchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    
+    ownerCnic:{
+        type: Number,
+        required: true
+    },
+    ownerName:{
+        type: String,
+        required: true
+    },
     services: {
         type: Array,
         required: true

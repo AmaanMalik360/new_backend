@@ -3,7 +3,8 @@ const jwt = require('jsonwebtoken')
 
 exports.adminSignup = async (req,res) => {
 
-    const {name, email, contact, services, password } = req.body;
+    const {name, email, contact, cnic, ownerName, services, password } = req.body;
+    const ownerCnic = cnic;
     try
     {
         const company = await Company.findOne({email: email})
@@ -16,6 +17,8 @@ exports.adminSignup = async (req,res) => {
             name,
             email,
             contact,
+            ownerCnic,
+            ownerName,
             services,
             password
         })

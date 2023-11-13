@@ -34,8 +34,29 @@ const companySchema = new mongoose.Schema({
         required: true
     }, // unused yet
     
+    rating:
+    {
+        type: Number
+    },
 
-    profilePicture: {type: String}  // unused yet
+    profilePicture: {type: String},  // unused yet
+
+    numberOfRatings: {
+        type: Number,
+        default: 0, // Default value is set to 0
+    },
+
+    recentEvents: [
+        {
+          feedback: {
+            type: String,
+          },
+          rating: {
+            type: Number,
+          },
+        },
+    ],
+
 
 }, {timestamps: true})
 

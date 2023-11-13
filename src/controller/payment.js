@@ -7,7 +7,7 @@ const stripe = require("stripe")(`${process.env.SK_TEST}`)
 const {google} = require('googleapis')
 const nodemailer = require('nodemailer');
 const Oauth2 = google.auth.OAuth2;
-
+let accessToken;
 
 exports.createCheckout = async (req,res) => {
     const {event, price, email} = req.body; 
@@ -52,37 +52,46 @@ exports.createCheckout = async (req,res) => {
 
 
 const createTransporter = async () => {
-  const oauth2Client = new Oauth2(
-    process.env.CLIENT_ID,
-    process.env.CLIENT_SECRET,
-    "https://developers.google.com/oauthplayground"
-  );
+  try {
+    const oauth2Client = new Oauth2(
+      process.env.CLIENT_ID2,
+      process.env.CLIENT_SECRET2,
+      "https://developers.google.com/oauthplayground"
+    );
 
-  oauth2Client.setCredentials({
-      refresh_token: process.env.REFRESH_TOKEN
-  });
+    oauth2Client.setCredentials({
+      refresh_token: process.env.REFRESH_TOKEN2,
+    });
 
-  const accessToken = await new Promise((resolve, reject) => {
-    oauth2Client.getAccessToken((err, token) => {
-      if(err)
-      {
-        reject("Failed to fetch the access token!!");
-      }
-      resolve(token);
-    })
-  })
+    const accessToken = await new Promise((resolve, reject) => {
+      oauth2Client.getAccessToken((err, token) => {
+        if (err) {
+          console.error("Failed to fetch the access token:", err);
+          console.error("OAuth2 error details:", err.response.data);
+          reject(err);
+        }
+        resolve(token);
+      });
+    });
 
-  return nodemailer.createTransport({
-    service: "gmail",
-    auth:{
-      type: "OAuth2",
-      user:process.env.MY_EMAIL,
-      accessToken,
-      clientId: process.env.CLIENT_ID,
-      clientSecret: process.env.CLIENT_SECRET,
-      refreshToken: process.env.REFRESH_TOKEN
-    }
-  });
+    return nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        type: "OAuth2",
+        user: process.env.MY_EMAIL,
+        accessToken,
+        clientId: process.env.CLIENT_ID2,
+        clientSecret: process.env.CLIENT_SECRET2,
+        refreshToken: process.env.REFRESH_TOKEN2,
+      },
+    });
+  } 
+  catch (error) 
+  {
+    console.error("Error creating transporter:", error);
+    throw error; // Re-throw the error to indicate failure
+  }
+
 
 }
 
@@ -95,7 +104,7 @@ const sendEmail = async (emailOptions) =>{
   } 
   catch (error) 
   {
-    console.log(error);
+    console.log("Error in sendEmail",error);
   }
 }
 
@@ -103,7 +112,7 @@ exports.checkedOutBid = async (req, res) => {
     
   const eventId = req.params.eventId;
   const companyId = req.params.companyId;
-
+  const mail = req.body.email
   try 
   {
       // Find the event by ID
@@ -118,23 +127,31 @@ exports.checkedOutBid = async (req, res) => {
       const response = event.responses.find((r) => r.company.toString() === companyId);
 
       if (!response) {
-      return res.status(404).json({ message: "Response not found for this company" });
+        return res.status(404).json({ message: "Response not found for this company" });
       }
 
       // Update the response's checkedout status
       response.checkedout = true;
-      console.log("From Checkedout Bid API after checking response as true.", response);
+      const p = response.price; 
+      
+      console.log(`From Checkedout Bid API after checking response as true with ${p}`, response);
 
+
+      const msg =  `Hey there! this mail is to confirm that ${mail} has paid the ${p}. You will be transacted the amount on the card registered with us.`
       // Now sending confirmation mail to company
       
       const options = {
         from: process.env.MY_EMAIL,
         to: company.email,
         subject: "Payment Successfully Done. ",
-        text: "Hey there! this mail is to confirm about the that you have been successfully transacted amount on the card registered with us."
+        text: msg
       }
       sendEmail(options);     
-       
+  
+      // Delete other responses for the same company
+      event.responses = event.responses.filter(
+        (r) => r.company.toString() === companyId && r._id.equals(response._id)
+      );
 
       // Save the event with the updated response
       event = await event.save();

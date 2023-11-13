@@ -30,24 +30,37 @@ const eventSchema = new mongoose.Schema({
         
     },
 
+    
     waitors:{
         type: Number,
     },
-
+    
     budget:{
         type: Number,
         required: true
     },
 
     postedBy:{
-            type: String,
-            required: true
+        type: String,
+        required: true
     },
-    
-    dishes:[""],
 
+    completedBy:{
+        type: String,
+        // required: true
+    },
+        
+    dishes:[""],
+        
     decors:{
         type: Array
+    },
+
+    // The required property shall remain undefined for now.
+    review:
+    {
+        feedback: { type: String},
+        rating: {type: Number}
     },
 
     responses:[
@@ -73,7 +86,8 @@ const eventSchema = new mongoose.Schema({
     
     
     posted: {
-        type: Boolean
+        type: Boolean,
+        default: false
     },
 
     bidsAccepted: [
@@ -89,6 +103,11 @@ const eventSchema = new mongoose.Schema({
             }
         }
     ],
+
+    completed: {
+        type: Boolean,
+        default: false
+    }
 
 },
 {

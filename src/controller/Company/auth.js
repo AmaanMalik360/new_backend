@@ -53,13 +53,13 @@ exports.adminSignin = async (req,res) => {
             {
                 const token = await jwt.sign({_id: company._id}, process.env.JWT_SECRET, {expiresIn: '1h'})
 
-                const {_id, name, email, fullname} = company;
+                const {_id, name, email, fullname, profilePicture} = company;
                 
                 res.status(200).json({
                     token,
                     company:
                     {
-                        _id, name, email, fullname
+                        _id, name, email, fullname, profilePicture
                     },
                     message: "Company Signed-in Successfully"
                 })
@@ -77,7 +77,6 @@ exports.adminSignin = async (req,res) => {
    
 }
 
-
 exports.getCompany = async (req,res) =>{
     
     try {
@@ -90,3 +89,47 @@ exports.getCompany = async (req,res) =>{
         res.status(409).json({message: "Error! Try again later", error});
     }
 }
+
+exports.imageUploadCompany = async (req,res) => {
+
+    console.log(req.file);
+    console.log(req.params.id);
+    try 
+    {
+        let company = await Company.findById(req.params.id).select('+profilePicture');
+        if (!company) 
+        {
+            return res.status(404).json({ message: 'Company not found' });
+        }
+
+        console.log(company);
+        company.profilePicture = req.file.filename;
+        await company.save();
+        const profilePicture = company.profilePicture
+        res.status(209).json({message: "Image posted successfully", profilePicture})
+
+    } 
+    catch(error){
+        
+        res.status(409).json({message: "Error! Try again later"});
+    }
+   
+}
+
+exports.imageGet = async (req, res) => {
+    try {
+        const companyId = req.params.id;
+        const company = await Company.findById(companyId);
+
+        if (!company) {
+            return res.status(404).json({ message: 'Company not found' });
+        }
+
+        const profilePicture = company.profilePicture;
+
+        res.status(200).json({ profilePicture});
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error! Try again later' });
+    }
+};

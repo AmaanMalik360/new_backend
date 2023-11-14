@@ -6,8 +6,8 @@ const stripe = require("stripe")("sk_test_51O2J2bSEe0mVyEmns4JkwOolirpMRD0PEXkTx
 const path =  require('path');
 const app = express();
 app.use(express.json());
+app.use(express.static('public'))
 app.use(cors());
-
 
 
 // To get environment variable

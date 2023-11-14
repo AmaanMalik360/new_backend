@@ -46,7 +46,7 @@ const companySchema = new mongoose.Schema({
         type: Number
     },
 
-    profilePicture: {type: String},  // unused yet
+    profilePicture: {type: String},  
 
     numberOfRatings: {
         type: Number,

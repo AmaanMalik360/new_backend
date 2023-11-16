@@ -75,9 +75,12 @@ const eventSchema = new mongoose.Schema({
             proposal: { type: String, required: true },
             accepted: { type: Boolean, default: false },
             checkedout: { type: Boolean, default: false },
-            contact: {type: Number, required: false}
+            payment1: { type: Boolean, default: false },
+            payment2: { type: Boolean, default: false },
+            contact: { type: Number, required: false}
         }
     ],
+
     
     cost:{
         type: Number

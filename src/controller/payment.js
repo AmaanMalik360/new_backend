@@ -9,47 +9,6 @@ const nodemailer = require('nodemailer');
 const Oauth2 = google.auth.OAuth2;
 let accessToken;
 
-// exports.createCheckout = async (req,res) => {
-//     const {event, price, email} = req.body; 
-    
-//     console.log("From Checkout: ", event);
-
-//     try 
-//     {
-//         const company = await Company.findOne({email:email});
-
-//         const lineItems = 
-//         [  
-//             {
-//                 price_data:{
-//                     currency: "pkr",
-//                     product_data: { // Use product_data instead of event_data
-//                         name: event.type, // Name of the product/event
-//                     },
-//                     unit_amount: price*100,
-//                 },
-//                 quantity: 1
-//             }
-//         ]
-
-//         const session = await stripe.checkout.sessions.create({
-//             payment_method_types: ["card"],  
-//             line_items: lineItems,
-//             mode: "payment",
-//             success_url: `http://localhost:3000/payment-success/${event._id}/${company._id}`,
-//             cancel_url: `http://localhost:3000/view-responses`,
-//         })
-        
-//         res.status(200).json({id:session.id})
-//     } 
-//     catch (error) 
-//     {
-//         console.error("Error creating a payment session:", error);
-//         res.status(409).json({ message: "Error creating a payment session", error });
-//     }
-
-// }
-
 exports.createCheckout = async (req, res) => {
   const { event, email, price } = req.body;
 
@@ -179,77 +138,6 @@ const sendEmail = async (emailOptions) =>{
   }
 }
 
-// exports.checkedOutBid = async (req, res) => {
-    
-//   const eventId = req.params.eventId;
-//   const companyId = req.params.companyId;
-//   const mail = req.body.email
-//   try 
-//   {
-//       // Find the event by ID
-//       let event = await Event.findById(eventId);
-//       let company = await Company.findById(companyId);
-
-//       if (!event) {
-//       return res.status(404).json({ message: "Event not found" });
-//       }
-
-//       // Find the response within the event's responses array
-//       const response = event.responses.find((r) => r.company.toString() === companyId);
-
-//       if (!response) {
-//         return res.status(404).json({ message: "Response not found for this company" });
-//       }
-
-//       // Update the response's checkedout status
-//       response.checkedout = true;
-//       const p = response.price; 
-      
-//       console.log(`From Checkedout Bid API after checking response as true with ${p}`, response);
-
-//       const msg =  `Hey there! this mail is to confirm that ${mail} has paid the ${p}. You will be transacted the amount on the card registered with us.`
-//       // Now sending confirmation mail to company
-      
-//       const options = {
-//         from: process.env.MY_EMAIL,
-//         to: company.email,
-//         subject: "Payment Successfully Done. ",
-//         text: msg
-//       }
-//       sendEmail(options);     
-
-//       const msg2 =  `Hey there! this mail is to confirm that you ${mail} have paid ${p} to ${company.email}. `
-//       // Now sending confirmation mail to client
-      
-//       const options2 = {
-//         from: process.env.MY_EMAIL,
-//         to: event.postedBy,
-//         subject: "Payment Successfully Done. ",
-//         text: msg2
-//       }
-//       sendEmail(options2);     
-      
-//       // Delete other responses for the same company
-//       event.responses = event.responses.filter(
-//         (r) => r.company.toString() === companyId && r._id.equals(response._id)
-//       );
-
-//       // Save the event with the updated response
-//       event = await event.save();
-
-//       res.status(200).json({ message: "Response marked as checked out successfully." });
-//   } 
-//   catch (error) 
-//   {
-//       console.error("Error marking response as checked out", error);
-//       res.status(409).json({ message: "Error! Try again later", error });
-//   }
-// };
-
-
-
-
-
 // new
 
 exports.checkedOutBid = async (req, res) => {
@@ -273,7 +161,7 @@ exports.checkedOutBid = async (req, res) => {
     }
 
     // Update the response's checkedout status
-    const p = (response.price)/2;
+    const p = response.price / 2;
 
     console.log(`From Checkedout Bid API after checking response as true with ${p}`, response);
 
@@ -286,7 +174,6 @@ exports.checkedOutBid = async (req, res) => {
       subject: "Payment Successfully Done. ",
       text: msg,
     };
-    
 
     const msg2 = `Hey there! This mail is to confirm that you ${mail} have paid ${p} to ${company.email}.`;
     // Now sending confirmation mail to client
@@ -297,44 +184,51 @@ exports.checkedOutBid = async (req, res) => {
       subject: "Payment Successfully Done. ",
       text: msg2,
     };
-    
+
     // Now update the payment fields based on the number of payments
-    if (!response.payment1) 
-    {
-    
+    if (!response.payment1) {
       response.checkedout = true;
       response.payment1 = true;
+
+      // Add the event date to the bookings field of the company
+      company.bookings.push({ date: event.date });
 
       // Delete other responses for the same company
       event.responses = event.responses.filter(
         (r) => r.company.toString() === companyId && r._id.equals(response._id)
-        );
-        console.log("Payment 1 marked as done");
-        
+      );
+      console.log("Payment 1 marked as done");
+
       sendEmail(options);
       sendEmail(options2);
+
       // Save the event with the updated response and payment status
       event = await event.save();
+      // Save the company with the updated bookings field
+      company = await company.save();
 
       res.status(200).json({ message: "Payment 1 and checkedout marked as true successfully." });
-
-    } 
-    else if (!response.payment2) 
-    {
+    } else if (!response.payment2) {
       response.payment2 = true;
       console.log("Payment 2 marked as done");
+
+      // Remove the event date from the bookings field of the company
+      // company.bookings = company.bookings.filter((booking) => !booking.date.equals(event.date));
+
       sendEmail(options);
       sendEmail(options2);
 
       // Save the event with the updated response and payment status
       event = await event.save();
-    
-      res.status(200).json({ message: "Response marked as checked outsuccessfully." });
-    }
+      // Save the company with the updated bookings field
+      company = await company.save();
 
+      res.status(200).json({ message: "Response marked as checked out successfully." });
+    }
   } catch (error) {
     console.error("Error marking response as checked out", error);
     res.status(409).json({ message: "Error! Try again later", error });
   }
 };
+
 

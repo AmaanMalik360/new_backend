@@ -1,9 +1,10 @@
 const Company = require('../../modals/Company')
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const User = require('../../modals/user');
 
 exports.adminSignup = async (req,res) => {
 
-    const {name, email, contact, cnic, ownerName, services, password } = req.body;
+    const {name, email, contact, cnic, ownerName, services, password, teamMembers, officeLocation } = req.body;
     const ownerCnic = cnic;
     try
     {
@@ -12,13 +13,57 @@ exports.adminSignup = async (req,res) => {
         if(company){
             return res.status(422).json({message:'Email already Exist'})
         }
+        
+        const user = await User.findOne({email: email})
 
+        if(user){
+            return res.status(422).json({message:'Email already Exist'})
+        }
+
+
+         // Contact for company
+        const companycontact  = await Company.findOne({contact: contact})
+        
+        if(companycontact){
+            return res.status(422).json({message:'Contact already Exist'})
+        }
+         
+         // Contact for user
+         const usercontact  = await User.findOne({contact: contact})
+ 
+        if(usercontact){
+            return res.status(422).json({message:'Contact already Exist'})
+        }
+         
+         // name for company
+        const companyname  = await Company.findOne({name: name})
+        
+        if(companyname){
+            return res.status(422).json({message:'name already Exist'})
+        }
+         
+         // name for user
+         const username  = await User.findOne({name: name})
+ 
+        if(username){
+            return res.status(422).json({message:'name already Exist'})
+        }
+        
+        // cnic for company
+        const companycnic  = await Company.findOne({cnic: cnic})
+        
+        if(companycnic){
+            return res.status(422).json({message:'cnic already Exist'})
+        }   
+         
         const new_company = new Company({
             name,
             email,
             contact,
             ownerCnic,
             ownerName,
+            officeLocation,
+            teamMembers,
             services,
             password
         })

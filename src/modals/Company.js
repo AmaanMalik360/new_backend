@@ -28,13 +28,25 @@ const companySchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+
     ownerCnic:{
         type: Number,
-        required: true
+        // required: true
     },
+
+    teamMembers:{
+        type: Number,
+        // required: true
+    },
+
     ownerName:{
         type: String,
-        required: true
+        // required: true
+    },
+    
+    officeLocation:{
+        type: String,
+        // required: true
     },
     services: {
         type: Array,
@@ -53,15 +65,10 @@ const companySchema = new mongoose.Schema({
         default: 0, // Default value is set to 0
     },
 
-    recentEvents: [
+    bookings: [
         {
-          feedback: {
-            type: String,
-          },
-          rating: {
-            type: Number,
-          },
-        },
+            date:{type: Date }
+        }
     ],
 
 

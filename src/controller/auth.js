@@ -1,3 +1,4 @@
+const Company = require('../modals/Company');
 const User = require('../modals/user')
 const jwt = require('jsonwebtoken')
 
@@ -6,11 +7,32 @@ exports.signup = async (req,res) => {
     const {name, email, contact, password} = req.body;
     try
     {
+        const company = await Company.findOne({email: email})
+
+        if(company){
+            return res.status(422).json({message:'Email already Exist'})
+        }
+
         const user = await User.findOne({email: email})
 
         if(user){
             return res.status(422).json({message:'Email already Exist'})
         }
+        
+        // Contact for company
+        const companycontact  = await Company.findOne({contact: contact})
+        
+        if(companycontact){
+            return res.status(422).json({message:'Contact already Exist'})
+        }
+        
+        // Contact for user
+        const usercontact  = await User.findOne({contact: contact})
+
+        if(usercontact){
+            return res.status(422).json({message:'Contact already Exist'})
+        }
+        
 
         const new_user = new User({
             name,

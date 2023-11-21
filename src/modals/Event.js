@@ -55,6 +55,10 @@ const eventSchema = new mongoose.Schema({
     decors:{
         type: Array
     },
+    
+    sitting:{
+        type: Object
+    },
 
     // The required property shall remain undefined for now.
     review:
@@ -71,6 +75,7 @@ const eventSchema = new mongoose.Schema({
                 required: true,
               },
             email: { type: String, required: true },
+            name: { type: String, required: true },
             price: { type: Number, required: true },
             proposal: { type: String, required: true },
             accepted: { type: Boolean, default: false },

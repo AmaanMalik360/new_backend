@@ -39,6 +39,7 @@ exports.addfood = async (req,res) => {
 exports.addDecor = async (req, res) => {
     try {
         const decor = req.body.selected;
+        const sitting = req.body.selectedSitting;
         const decorCost = req.body.totalCost;
 
         // Use findById to find the event by its unique _id
@@ -56,6 +57,7 @@ exports.addDecor = async (req, res) => {
             {
                 $set: {
                     decors: decor,
+                    sitting: sitting,
                     cost: cost,
                     posted: true
                 }
@@ -65,7 +67,7 @@ exports.addDecor = async (req, res) => {
 
         console.log(eventDecor);
 
-        res.status(200).json({ eventDecor, message: "Decor Posted Successfully" });
+        res.status(200).json({ eventDecor, message: "Decor and Sitting Plan Posted Successfully" });
     } 
     catch (error) 
     {
@@ -125,23 +127,36 @@ exports.getEvent = async (req,res) => {
 exports.registerResponses = async (req, res) => {
     try {
         const { cId, price, text } = req.body; // Change `cId` to `companyId`
-        const companyId = cId;
         const proposal = text;
-
+        const companyId = cId;
         const event = await Event.findById(req.params.id);
 
+        console.log(companyId);
         // Check if the company has already posted a response with the same companyId
         const responseExists = event.responses.some((response) => response.company.toString() === companyId);
 
         if (responseExists) {
             return res.status(409).json({ message: "Response already exists for this company" });
-        } else {
-            // Fetch the company's email
+        } 
+        else {
+            // Fetch the company's name
             const company = await Company.findById(companyId);
-            const companyEmail = company.email;
 
-            // If the response doesn't already exist, add it to the responses array
-            event.responses.push({ company: companyId, email: companyEmail, price, proposal });
+            if (!company) {
+                return res.status(404).json({ message: "Company not found" });
+            }
+            
+            const companyName = company.name;
+            const companyEmail = company.email;
+            // Check if the event date exists in the company's bookings array
+            const dateAlreadyBooked = company.bookings.some((booking) => booking.date.equals(event.date));
+
+            if (dateAlreadyBooked) {
+                return res.status(409).json({ message: "You are already booked for that date" });
+            }
+
+            // If the response doesn't already exist and the date is not booked, add it to the responses array
+            event.responses.push({ company: companyId, name: companyName, email: companyEmail,price, proposal });
             const updatedEvent = await event.save();
 
             res.status(200).json({ event: updatedEvent, message: "Response Posted Successfully" });
@@ -151,7 +166,6 @@ exports.registerResponses = async (req, res) => {
         res.status(409).json({ message: "Error! Try again later", error });
     }
 };
-
 
 exports.acceptBid = async (req, res) => {
     const eventId = req.params.id; // The event ID where the bid is accepted
@@ -198,6 +212,34 @@ exports.acceptBid = async (req, res) => {
     }
 };
 
+
+exports.rejectBid = async (req, res) => {
+    const eventId = req.params.id; // The event ID where the bid is rejected
+    const companyId = req.body.cId; // The ID of the company whose bid is rejected
+  
+    try {
+      // Find the event by ID
+      const event = await Event.findById(eventId);
+  
+      if (!event) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+  
+      // Use filter to remove the rejected response from the responses array
+      event.responses = event.responses.filter(
+        (r) => r.company.toString() !== companyId
+      );
+  
+      // Save the event with the updated responses
+      await event.save();
+  
+      res.status(200).json({ message: "Bid rejected successfully" });
+    } catch (error) {
+      res.status(409).json({ message: "Error! Try again later", error });
+    }
+  };
+  
+
 exports.updateBid = async (req,res) =>{
     const eventId = req.params.id; // The event ID where the bid is accepted
     const companyId = req.body.cId; // The ID of the company whose bid is accepted
@@ -239,6 +281,7 @@ exports.updateBid = async (req,res) =>{
         res.status(409).json({ message: "Error! Try again later", error });
     }
 }
+
 
 exports.completed = async (req, res) => 
 {
